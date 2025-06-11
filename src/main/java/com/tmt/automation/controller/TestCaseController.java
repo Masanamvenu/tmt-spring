@@ -199,9 +199,11 @@ public class TestCaseController {
     public ResponseEntity<?> deleteTestCase(@PathVariable("id") String id) {
         Optional<TestCase> testCase = testCaseRepository.findById(id);
         if (testCase.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            //return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body("TestCase not found");
         }
         testCaseRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        //return ResponseEntity.noContent().build();
+        return ResponseEntity.status(202).body("TestCase deleted successfully");
     }
 }

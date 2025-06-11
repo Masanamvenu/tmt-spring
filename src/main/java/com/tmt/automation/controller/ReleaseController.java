@@ -80,11 +80,13 @@ public class ReleaseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRelease(@PathVariable String id) {
+    public ResponseEntity<String> deleteRelease(@PathVariable String id) {
         if (!releaseRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            //return ResponseEntity.notFound().build();
+             return ResponseEntity.status(404).body("Release Not Found");
         }
         releaseRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        //return ResponseEntity.noContent().build();
+        return ResponseEntity.status(202).body("Release deleted successfully");
     }
 }

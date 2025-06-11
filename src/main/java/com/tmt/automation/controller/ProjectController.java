@@ -67,11 +67,13 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable String id) {
+    public ResponseEntity<String> deleteProject(@PathVariable String id) {
         if (!projectRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            //return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body("Project Not Found");
         }
         projectRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        //return ResponseEntity.noContent().build();
+        return ResponseEntity.status(202).body("Project deleted successfully");
     }
 }

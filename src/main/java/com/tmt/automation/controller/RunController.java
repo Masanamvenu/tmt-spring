@@ -97,11 +97,13 @@ public class RunController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRun(@PathVariable String id) {
+    public ResponseEntity<String> deleteRun(@PathVariable String id) {
         if (!runRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            //return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body("Run not found");
         }
         runRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        //return ResponseEntity.noContent().build();
+        return ResponseEntity.status(202).body("Run deleted successfully");
     }
 }
