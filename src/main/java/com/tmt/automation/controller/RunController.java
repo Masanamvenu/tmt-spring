@@ -2,6 +2,8 @@ package com.tmt.automation.controller;
 
 import com.tmt.automation.model.Run;
 import com.tmt.automation.repository.RunRepository;
+import com.tmt.automation.repository.ProjectRepository;
+import com.tmt.automation.repository.ReleaseRepository;
 import com.tmt.automation.service.SequenceGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,12 @@ public class RunController {
     private RunRepository runRepository;
 
     @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private ReleaseRepository releaseRepository;
+
+    @Autowired
     private SequenceGeneratorService sequenceGeneratorService;
 
     @GetMapping
@@ -38,6 +46,16 @@ public class RunController {
 
     @PostMapping
     public ResponseEntity<?> createRun(@Valid @RequestBody Run run) {
+        // Check if ProjectID exists
+        boolean projectExists = projectRepository.findAll().stream().anyMatch(p -> p.getProjectID().equals(run.getProjectID()));
+        if (!projectExists) {
+            return ResponseEntity.badRequest().body("Cannot add Run: ProjectID does not exist.");
+        }
+        // Check if ReleaseID exists
+        boolean releaseExists = releaseRepository.findAll().stream().anyMatch(r -> r.getReleaseID().equals(run.getReleaseID()));
+        if (!releaseExists) {
+            return ResponseEntity.badRequest().body("Cannot add Run: ReleaseID does not exist.");
+        }
         // Check for duplicate RunName within the same ProjectID and ReleaseID
         if (runRepository.findByProjectIDAndReleaseIDAndRunName(run.getProjectID(), run.getReleaseID(), run.getRunName()).isPresent()) {
             return ResponseEntity.badRequest().body("Run name already exists for this release in the project");
@@ -54,6 +72,16 @@ public class RunController {
         Optional<Run> optionalRun = runRepository.findById(id);
         if (optionalRun.isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+        // Check if ProjectID exists
+        boolean projectExists = projectRepository.findAll().stream().anyMatch(p -> p.getProjectID().equals(updatedRun.getProjectID()));
+        if (!projectExists) {
+            return ResponseEntity.badRequest().body("Cannot update Run: ProjectID does not exist.");
+        }
+        // Check if ReleaseID exists
+        boolean releaseExists = releaseRepository.findAll().stream().anyMatch(r -> r.getReleaseID().equals(updatedRun.getReleaseID()));
+        if (!releaseExists) {
+            return ResponseEntity.badRequest().body("Cannot update Run: ReleaseID does not exist.");
         }
         // Check if another run with the same name exists in the same project and release
         Optional<Run> runWithName = runRepository.findByProjectIDAndReleaseIDAndRunName(updatedRun.getProjectID(), updatedRun.getReleaseID(), updatedRun.getRunName());
