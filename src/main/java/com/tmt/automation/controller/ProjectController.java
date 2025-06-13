@@ -16,6 +16,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/projects")
 @Validated
+@CrossOrigin(origins = "http://localhost:8082", allowCredentials = "true")
 public class ProjectController {
 
     @Autowired
@@ -29,16 +30,15 @@ public class ProjectController {
         return projectRepository.findAll();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Project> getProjectById(@PathVariable String id) {
-        return projectRepository.findById(id)
+    @GetMapping("/{projectId}")
+    public ResponseEntity<Project> getProjectById(@PathVariable String projectId) {
+        return projectRepository.findByProjectID(projectId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<?> createProject(@Valid @RequestBody Project project) {
-        // Check for duplicate projectName
         if (projectRepository.findByProjectName(project.getProjectName()).isPresent()) {
             return ResponseEntity.badRequest().body("Project name already exists");
         }
@@ -49,15 +49,14 @@ public class ProjectController {
         return ResponseEntity.ok(projectRepository.save(project));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable String id, @Valid @RequestBody Project updatedProject) {
-        Optional<Project> optionalProject = projectRepository.findById(id);
+    @PutMapping("/{projectId}")
+    public ResponseEntity<?> updateProject(@PathVariable String projectId, @Valid @RequestBody Project updatedProject) {
+        Optional<Project> optionalProject = projectRepository.findByProjectID(projectId);
         if (optionalProject.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        // Check if another project with the same name exists
         Optional<Project> projectWithName = projectRepository.findByProjectName(updatedProject.getProjectName());
-        if (projectWithName.isPresent() && !projectWithName.get().getId().equals(id)) {
+        if (projectWithName.isPresent() && !projectWithName.get().getProjectID().equals(projectId)) {
             return ResponseEntity.badRequest().body("Project name already exists");
         }
         Project project = optionalProject.get();
@@ -66,14 +65,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectRepository.save(project));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProject(@PathVariable String id) {
-        if (!projectRepository.existsById(id)) {
-            //return ResponseEntity.notFound().build();
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<String> deleteProject(@PathVariable String projectId) {
+        Optional<Project> optionalProject = projectRepository.findByProjectID(projectId);
+        if (optionalProject.isEmpty()) {
             return ResponseEntity.status(404).body("Project Not Found");
         }
-        projectRepository.deleteById(id);
-        //return ResponseEntity.noContent().build();
+        projectRepository.delete(optionalProject.get());
         return ResponseEntity.status(202).body("Project deleted successfully");
     }
 }

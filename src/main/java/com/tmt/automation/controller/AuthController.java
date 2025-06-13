@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Remove or restrict in production!
+@CrossOrigin(origins = "http://localhost:8082") // Remove or restrict in production!
 public class AuthController {
 
     @Autowired
