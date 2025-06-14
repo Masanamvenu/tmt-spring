@@ -59,15 +59,12 @@ public class TestCaseController {
         if (!runExists) {
             return ResponseEntity.badRequest().body("Cannot add TestCase: RunID does not exist.");
         }
-        /*if (testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseName(batchRequest.getProjectID(), batchRequest.getReleaseID(), batchRequest.getRunID(), batchRequest.getTestCaseName()).isPresent()) {
-            return ResponseEntity.badRequest().body("Test case name already exists for this run");
-        }*/
         if (testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseName(
-        batchRequest.getProjectID(),
-        batchRequest.getReleaseID(),
-        batchRequest.getRunID(),
-        batchRequest.getTestCaseName()
-    ).isPresent()) {
+            batchRequest.getProjectID(),
+            batchRequest.getReleaseID(),
+            batchRequest.getRunID(),
+            batchRequest.getTestCaseName()
+        ).isPresent()) {
             return ResponseEntity.badRequest().body("Test case name already exists for this run");
         }
         // Map test steps
@@ -79,7 +76,6 @@ public class TestCaseController {
             step.setActualResult(stepReq.getActualResult());
             step.setLocatorType(stepReq.getLocatorType());
             step.setLocatorValue(stepReq.getLocatorValue());
-            // Fix: Convert List<String> to List<BrowserAction>
             if (stepReq.getBrowserActions() != null) {
                 List<BrowserAction> browserActions = stepReq.getBrowserActions().stream()
                     .map(BrowserAction::valueOf)
@@ -107,6 +103,7 @@ public class TestCaseController {
 
         return ResponseEntity.ok(List.of(saved));
     }
+
     // GET: Get all test cases
     @GetMapping
     public ResponseEntity<List<TestCase>> getAllTestCases() {
@@ -121,27 +118,33 @@ public class TestCaseController {
         return testCase.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    @GetMapping("/{projectID}/{releaseID}/{runID}/{testCaseID}")
-public ResponseEntity<?> getTestCaseById(
-    @PathVariable String projectID,
-    @PathVariable String releaseID,
-    @PathVariable String runID,
-    @PathVariable String testCaseID
-) {
-    Optional<TestCase> testCase = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseID(
-        projectID, releaseID, runID, testCaseID
-    );
-    return testCase.map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-}
 
-    // PUT: Update test case by ID
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateTestCase(
-            @PathVariable("id") String id,
-            @Valid @RequestBody TestCaseBatchRequest batchRequest
+    @GetMapping("/{projectID}/{releaseID}/{runID}/{testCaseID}")
+    public ResponseEntity<?> getTestCaseById(
+        @PathVariable String projectID,
+        @PathVariable String releaseID,
+        @PathVariable String runID,
+        @PathVariable String testCaseID
     ) {
-        Optional<TestCase> existingOpt = testCaseRepository.findById(id);
+        Optional<TestCase> testCase = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseID(
+            projectID, releaseID, runID, testCaseID
+        );
+        return testCase.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // PUT: Update test case by composite ID
+    @PutMapping("/{projectID}/{releaseID}/{runID}/{testCaseID}")
+    public ResponseEntity<?> updateTestCase(
+        @PathVariable String projectID,
+        @PathVariable String releaseID,
+        @PathVariable String runID,
+        @PathVariable String testCaseID,
+        @Valid @RequestBody TestCaseBatchRequest batchRequest
+    ) {
+        Optional<TestCase> existingOpt = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseID(
+            projectID, releaseID, runID, testCaseID
+        );
         if (existingOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -163,14 +166,13 @@ public ResponseEntity<?> getTestCaseById(
             return ResponseEntity.badRequest().body("Cannot update TestCase: RunID does not exist.");
         }
         // Check for test case name uniqueness (exclude current)
-        //Optional<TestCase> duplicate = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseName(batchRequest.getRunID(), batchRequest.getTestCaseName());
         Optional<TestCase> duplicate = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseName(
             batchRequest.getProjectID(),
             batchRequest.getReleaseID(),
             batchRequest.getRunID(),
             batchRequest.getTestCaseName()
         );
-        if (duplicate.isPresent() && !duplicate.get().getTestCaseID().equals(id)) {
+        if (duplicate.isPresent() && !duplicate.get().getTestCaseID().equals(testCaseID)) {
             return ResponseEntity.badRequest().body("Test case name already exists for this run");
         }
 
@@ -208,15 +210,20 @@ public ResponseEntity<?> getTestCaseById(
     }
 
     // DELETE: Delete test case by ID
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteTestCase(@PathVariable("id") String id) {
-        Optional<TestCase> testCase = testCaseRepository.findById(id);
-        if (testCase.isEmpty()) {
-            //return ResponseEntity.notFound().build();
-            return ResponseEntity.status(404).body("TestCase not found");
-        }
-        testCaseRepository.deleteById(id);
-        //return ResponseEntity.noContent().build();
-        return ResponseEntity.status(202).body("TestCase deleted successfully");
+    @DeleteMapping("/{projectID}/{releaseID}/{runID}/{testCaseID}")
+public ResponseEntity<?> deleteTestCaseByCompositeKey(
+    @PathVariable String projectID,
+    @PathVariable String releaseID,
+    @PathVariable String runID,
+    @PathVariable String testCaseID
+) {
+    Optional<TestCase> testCase = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseID(
+        projectID, releaseID, runID, testCaseID
+    );
+    if (testCase.isEmpty()) {
+        return ResponseEntity.status(404).body("TestCase not found");
     }
+    testCaseRepository.deleteById(testCase.get().getId()); // or getTestCaseID() if that's your PK
+    return ResponseEntity.status(202).body("TestCase deleted successfully");
+}
 }
