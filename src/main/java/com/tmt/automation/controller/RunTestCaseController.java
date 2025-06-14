@@ -14,12 +14,24 @@ public class RunTestCaseController {
     private TestExecutorService testExecutorService;
 
     @PostMapping
-    public ResponseEntity<String> runTestCase(@RequestBody RunTestCase request) {
-        boolean result = testExecutorService.executeTestCase(request.getTestCaseId());
-        if (result) {
-            return ResponseEntity.ok("Test case executed successfully.");
+    public ResponseEntity<?> runTestCases(@RequestBody RunTestCase request) {
+        // Validate if testCaseIds is not null or empty
+        if (request.getTestCaseIds() == null || request.getTestCaseIds().isEmpty()) {
+            return ResponseEntity.badRequest().body("No testCaseIds provided.");
+        }
+        // Optionally collect results for each case
+        boolean allSuccess = true;
+        StringBuilder results = new StringBuilder();
+        for (String testCaseId : request.getTestCaseIds()) {
+            boolean result = testExecutorService.executeTestCase(testCaseId);
+            results.append("TestCaseID ").append(testCaseId)
+                    .append(result ? ": SUCCESS\n" : ": FAILED\n");
+            if (!result) allSuccess = false;
+        }
+        if (allSuccess) {
+            return ResponseEntity.ok(results.toString());
         } else {
-            return ResponseEntity.badRequest().body("Test case execution failed.");
+            return ResponseEntity.badRequest().body(results.toString());
         }
     }
 }

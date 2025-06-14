@@ -115,12 +115,25 @@ public class TestCaseController {
     }
 
     // GET: Get test case by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getTestCaseById(@PathVariable("id") String id) {
-        Optional<TestCase> testCase = testCaseRepository.findById(id);
+    @GetMapping("/{testCaseID}")
+    public ResponseEntity<?> getTestCaseById1(@PathVariable String testCaseID) {
+        Optional<TestCase> testCase = testCaseRepository.findByTestCaseID(testCaseID);
         return testCase.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    @GetMapping("/{projectID}/{releaseID}/{runID}/{testCaseID}")
+public ResponseEntity<?> getTestCaseById(
+    @PathVariable String projectID,
+    @PathVariable String releaseID,
+    @PathVariable String runID,
+    @PathVariable String testCaseID
+) {
+    Optional<TestCase> testCase = testCaseRepository.findByProjectIDAndReleaseIDAndRunIDAndTestCaseID(
+        projectID, releaseID, runID, testCaseID
+    );
+    return testCase.map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+}
 
     // PUT: Update test case by ID
     @PutMapping("/{id}")
