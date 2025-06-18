@@ -23,8 +23,10 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     public static class SignupRequest {
+        public String name;
         public String email;
         public String password;
+
     }
 
     public static class LoginRequest {
@@ -48,6 +50,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email is already in use!");
         }
         User user = new User();
+        user.setName(signupRequest.name);
         user.setEmail(signupRequest.email);
         user.setPassword(passwordEncoder.encode(signupRequest.password));
         userRepository.save(user);
